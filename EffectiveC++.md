@@ -202,4 +202,46 @@ Drived& operator=(const Drived& rhs)
     return *this;
 }
 ```
-# 3장
+# 3장 자원 관리
+
+### 자원관리는 객체로
+
+\- 자원 누출을 막기위해, 생성자 안에서 자원을 획득하고, 소멸자에서 그것을 해제하는 RAII(resource aquisition is initialization) 겍체를 사용합시다.  
+\- 일반적으로 널리 쓰이는 RAII 클래스는 shared_ptr , auto_ptr 있는데 shared_ptr이 복사 동작이 직관적이기 때문에 더 널리 쓰인다. auto_ptr은 복사시 원본을 null로 만들어 버린다.
+
+### 자원관리 클래스이 복사 동작에 대해 진지하게 고찰하자
+
+\- RAII객체의 복사는 그 객체가 관리하는 자원의 복사 문제가 있기에, 그자원을 어떻게 복사 하느냐에 따라 RAII객체의 복사 동작이 결정된다.
+\- RAII객체의 복사 동작을 금지 하거나, 참조 카운팅을 해주는 선으로 마무리 할 수 있다.
+
+### 자원 관리 클래스에서 관리되는 자원은 외부에서 접근할 수 있도록 하자.
+
+\- RAII 클래스를 만들 때는 그 클래스가 관리하는 자원을 얻을 수 있는 방법을 열어주어야 한다.
+\- 자원 접근은 명시적 또는 암시적 변환을 통해서 가능하다.
+
+### new 및 delete를 사용할 떄는 형태를 반드시 맞추자.
+
+new 표현식에 []을 썼으면, delete 표현식에도 []을 써야하고,
+new 표현식에 []을 사요하지 않았으면, delete에는 []을 사용하지 말아야 한다.
+
+### new로 생성한 객체를 스마트 포인터에 저장하는 코드는 별도의 한 문장으로 만들자.
+```cpp
+//이런 함수가 있다고 가정하자.
+void processWidget(std::shared_ptr<Widget> pw, int priority);
+
+//함수 호출
+processWidget(std::shared_ptr<Widget>(new Widget), priority());
+
+//개선 코드
+std::shared_ptr<Widget> pw(new Widget);
+processWidget(pw, priority()); // 자원 누출 걱정이 사라짐.
+```
+CPP 에서는 파라미터에서 함수 호출 순서가 컴파일러마다 다를 수 있다.
+예를 들어 위에 함수를 호출 할때 순서가,
+new Widget  
+Priority  
+std::shared_ptr  
+이런 순서로 호출이 될 수 있다는 말이고 이런식 으로 호출 될때 Priority간 호출 되면서 예외가 발생하게 된다면 new Widget에서 생성된 자원이 누수가 된다.  
+때문에 반드시 **스마트 포인터에 저장되는 코드는 별도의 한문장으로 만들어야 한다.**
+
+new 로 생성한 객체를 스마트 포인터에 넣는 코드는 반드시 별도의 한문장으로 만들자. 그렇지 않으면 디버깅하기 힘든 자원 누출이 초래될 수 있다.
