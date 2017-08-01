@@ -415,3 +415,142 @@ inline 함수로 선언해도 조건에 따라서는 inline화가 안될 수 있
 >함수 인라인은 작고, 자주 호출되는 함수에 대해서만 하는것으로 하자.
 >함수 템플릿이 대게 헤더 파일에 들어간다는 일반적인 부분만 생각해서 이들을 inline함수로 선언하면 안된다.
 
+### 31. 파일 사이의 컴파일 의존성을 죄대로 줄이자.
+
+> 정의 대신에 선언에 의존하게 만들자 => 핸들 클래스 와 인터페이스 클래스
+> 라이브러리 헤더는 선언부만 갖고 있는 형태여야 한다.
+
+```
+//핸들 클래스 
+class Person
+{
+public:
+    Person(const std::string& name, const Date& birthday, const Address& addr)
+    std::string name() const;
+    std::string virthDate() cosnt;
+    std::string address() const;
+    
+private:
+    std::tr1::shared_ptr<PersonImpl> pImpl //구현 클래스에 대한 객체 포인터
+                                           //PersonImpl는 Person에 있는 함수를 모두 구현하고 호출하는 방식으로 동작한다.
+    
+}
+
+//생성자에서pImpl을 초기화 해준다. 
+Person::Person(cosnt std::string& name, const Date& birthday, 
+                const address& addr) : pImpl(new PersonImpl(name, birthday, addr))
+{
+
+}
+
+std::string Person::name() const
+{
+    return pImpl->name();
+}
+
+
+//인터페이스 클래스
+
+class Person
+{
+public:
+    virtual ~Person();
+    virtual std::string name() cosnt =0;
+    virtual std::string birthDate() cosnt =0 ;
+    virtual std::string address() const =0 ;
+}
+
+
+```
+
+# 6장 상속, 그리고 객체 지향 설계
+
+### 33. 상속된 이름을 숨기는 일은 피하자.
+```cpp
+class Base
+{
+private:
+    int x;
+public:
+    virtual void mf1() = 0;
+    virtual void mf1(int);
+    virtual void mf2();
+    void mf3();
+    void mf3(double);
+};
+
+class Drived:public Base
+{
+public:
+    virtual void mf1();
+    void mf3();
+    void mf4();
+}
+
+void main()
+{
+    Drived d;
+    int x; 
+    d.mf1(); //Drived call
+    d.mf1(x); // error hide base
+    
+    d.mf2(); //base call
+    
+    d.mf3(); //drived call
+    d.mf3(x); //Error hide base
+}
+```
+
+위 코드에서 확인 되었듯이 상속 받은 함수와 같은 함수의 이름이, 부모(base) class에 존재 하면 파라미터가 달라도 자식(Drived) class의해서 모두 가려지게 된다.  
+그렇다면 부모 클래스의 overload 된 함수들을 자식클래스에서 계속해서 가려져야 하는 것일까? 아니다 방법이 있다.
+
+코드를 아래와 같이 수정하면 된다.
+
+```cpp
+class Drived:public Base
+{
+public:
+    using Base::mf1; //Base에 있는 것들 중 mf1과 mf3 이름으로 가진 것들을 
+    using Base::mf3; //Derived의 유효 범위에서 볼 수 있도록 만든다.
+
+    virtual void mf1();
+    void mf3();
+    void mf4();
+}
+
+void main()
+{
+    Drived d;
+    int x; 
+    d.mf1(); //Drived call
+    d.mf1(x); // base call
+    
+    d.mf2(); //base call
+    
+    d.mf3(); //drived call
+    d.mf3(x); //base call
+}
+```
+**전달 함수**
+```cpp
+class Base
+{
+public:
+    virtual void mf1() =0;
+    virtual void mf1(int);
+}
+
+//여기서 using을 사용하게 되면 private로 상속한 Base클래스의 모든 mf1 함수가 외부로 노출되기 때문이다.
+//mf1()함수만 노출 시키고 싶을때 사용하는 방법이다.
+class Drived: private Base
+{
+public:
+    virtual void mf1() //전달 함수 
+    {Base::mf1();}     //Inline함수가 된다.
+}
+```
+
+이제는 정상적으로 동작하는 것을 확인 할 수 있다.  
+
+> 파생 클래스이 이름은 기본 클래스이 이름을 가린다. public상속에서는 이런 이름 가림 현상은 바람직하지 않다.
+> 가려진 이름을 다시 볼 수 있게 하는 방법으로, using선언 혹은 전달 함수를 쓸 수 있다.
