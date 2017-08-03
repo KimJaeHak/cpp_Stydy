@@ -553,4 +553,101 @@ public:
 이제는 정상적으로 동작하는 것을 확인 할 수 있다.  
 
 > 파생 클래스이 이름은 기본 클래스이 이름을 가린다. public상속에서는 이런 이름 가림 현상은 바람직하지 않다.
-> 가려진 이름을 다시 볼 수 있게 하는 방법으로, using선언 혹은 전달 함수를 쓸 수 있다.
+> 가려진 이름을 다시 볼 수 있게 하는 방법으로, using선언 혹은 전달 함수를 쓸 수 있다.  
+
+### 34. 인터페이스 상속과 구현 상속의 차이를 제대로 파악하고 구별하자.
+```cpp
+class shape
+{
+public:
+    virtual void draw() cosnt = 0;
+    virtual void error(const std::string& msg);
+    int objectID() const;
+}
+
+class Rectangle : public Shape{...};
+class Ellips : public Shape{...};
+```
+
+> 순수가상 함수를 선언하는 목적은 파생 클래스에게 함수의 인터페이스만을 물려주려는 것입니다.  
+
+순수 가상 함수에도 정의를 제공할 수 있습니다. 하지만 호출을 하기 위해서는 반드시 클래스 이름을 한정자로 붙여주어야 합니다.
+```cpp
+Shape *ps = new Ellips();
+ps->Shape::draw();
+```
+> 단순 가상함수를 선언하는 목적은 파생 클래스로 하여금 함수의 인터페이스 뿐만아니라 그 함수의  
+> 기본 구현도 물려받게 하자는 것입니다.
+
+>인터페이스 상속은 구현 상속과 다릅니다. public상속에서, 파생 클래스는 항상 기본 클래스의 인터페이스를 모두  
+>물려 받습니다.  
+>순수 가상 함수는 인터페이스 상속만을 허용합니다.  
+>단순(비순수)가상함수는 인터페이스 상속과 더불어 기본 구현의 상속도 가능하도록 지정합니다.  
+>비가상 함수는 인터페이스 상속과 구현의 상속도 가하도록 지정한다.  
+
+### 35. 가상 함수 대신 쓸 것들도 생각해 두는 자세를 길러두자.
+
+**비가상 인터페이스 관용구를 통한 템플릿 메서드 패턴**
+
+```cpp
+class CameCharacter
+{
+public:
+    int healthValue() cosnt
+    {
+        int retVal = dohealthValue();
+        return retVal;
+    }
+    
+private:
+    virtual int doHealthValue() const //Drived 클래스에서 오버라이드 할 수 있다.
+    {
+     ....
+    }
+}
+```
+
+**함수 포인터로 구현한 전략 패턴**
+
+```cpp
+class GameCharacter; //전방선언
+
+int defaultHealthCalc(const GameCharacter& gc);
+
+class GameCharacter
+{
+public:
+    typedef int (*HealthCalcFunc)(const GameCharacter&);
+    explicit GameCharacter(HealthCalcFrnc hcf = defaultHealthCalc) : healthFunc(hcf){} //initiallize
+    
+    int healthValue() const
+    {
+        return healthFunc(*this);
+    }
+        
+private:
+    HealthCalcFunc healthFunc;
+
+}
+```
+
+**tr1::function으로 구현한 전략 패턴**
+```cpp
+class GameCharacter;
+int defaultHealthCalc(const GameCharacter& gc);
+
+class GAmeCharacter
+{
+public:
+    typedef std::tr1::function<int (const GameCharacter&)> HealthCalcFunc;
+    explicit GameCharter(HealthCalcFunc hcf = defalutHealthCalc) : healthFunc(hcf){}
+    int healthValue() const
+    {
+        return healthFunc(*this);
+    }
+    
+private:
+    HealthCalcFunc healthFunc;
+}
+```
+
