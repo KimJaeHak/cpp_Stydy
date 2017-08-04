@@ -651,3 +651,57 @@ private:
 }
 ```
 
+### 36. 상속받은 비가상 함수를 파생 클래스에서 재정의하는 것은 절대 금물
+
+>객체를 가르키는 포인터의 타입에 의해서 함수가 결정되는 일이 발생 하기 때문이다.  
+>이렇게 되면 프로그램 상에서 어떻게 동작할지 예측 하기가 매우 어렵다.
+
+### 37. 어떤 함수에 대해서도 상속받은 기본 매개변수 값은 절대로 재정의 하지 말자.
+>함수의 매개변수 값은 정적 바인딩 되고, 가상함수는 동적 바인딩 된다.  
+객체를 가리키는 포인터 타입에 정의되어 있는 매개변수를 사용하고, 함수는 생성된 객체의 함수를 사용하는 이상한 현상이 발생하게 된다.
+
+```cpp
+class Shape
+{
+public
+    enum ShapeColor {red, Green, Blue};
+    virtual void draw(ShapeColor color = Red) const =0;
+    
+}
+
+class Rectangle: public Shape
+{
+public:
+    //기본 매개변수의 값을 변경하는 코드.
+    virtual void draw(ShapeColor color = Green) cosnt;
+}
+
+void main()
+{
+    Shape *pr = new Rectangle;  //
+    *pr.draw()  //이것은 Rectangle::draw(ShapeColor::Red)로 동작 하게 된다.
+}
+```
+### 39. private 상속은 심사숙고해서 구사하자.
+
+>- private상속을 대체할 방법은 존재한다. 객체 합성 기법으로 해결이 가능 하지만, 어떤 클래스의 protected 맴버를 사용해야 할 필요가 있을때는  
+>private상속으로 구현 한다.
+>- 객체 합성과는 달리 private 상속은 공백 기본 클래스 최적화(EBO)를 활성화 시킬 수 있다.
+
+```cpp
+//객체 합성 코드
+class Widget
+{
+private:
+    class WidgetTimer : public Timer
+    {
+    public
+        virtual void onTick() const;
+    }
+    
+    WidgetTimer timer; //Has-a 관계로 구현 하는 것을 객체 합성이라고 한다.
+}
+```
+
+### 40. 다중 삭속은 심사숙고해서 사용하자.
+
